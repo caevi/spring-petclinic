@@ -1,0 +1,78 @@
+pipeline {
+  agent any
+
+  triggers {
+    // Every 5 minutes on Mondays (day-of-week: 1 = Monday)
+    cron('*/5 * * * 1')
+  }
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  tools {
+    // Configure this name in Jenkins: Manage Jenkins → Tools → Maven installations
+    maven 'Maven3'
+    // If you prefer using Jenkins-installed JDK, configure similarly and uncomment:
+    // jdk 'JDK17'
+  }
+
+  environment {
+    MVN = "mvn -B -DskipITs=true"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build + Unit Tests') {
+      steps {
+        sh "${env.MVN} clean test"
+      }
+      post {
+        always {
+          // Shows unit test results in Jenkins
+          junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+        }
+      }
+    }
+
+    stage('JaCoCo Coverage Report') {
+      steps {
+        // Generate JaCoCo HTML report
+        sh "${env.MVN} jacoco:report"
+      }
+    }
+
+    stage('Package Artifact') {
+      steps {
+        // Build the runnable jar
+        sh "${env.MVN} package -DskipTests"
+      }
+      post {
+        success {
+          // Archive the artifact so Jenkins stores it per-build
+          archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      // Publish the JaCoCo HTML report in Jenkins (requires HTML Publisher plugin)
+      publishHTML(target: [
+        allowMissing: false,
+        alwaysLinkToLastBuild: true,
+        keepAll: true,
+        reportDir: 'target/site/jacoco',
+        reportFiles: 'index.html',
+        reportName: 'JaCoCo Code Coverage'
+      ])
+    }
+  }
+}
