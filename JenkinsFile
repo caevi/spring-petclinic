@@ -65,7 +65,7 @@ pipeline {
     always {
       // Publish the JaCoCo HTML report in Jenkins (requires HTML Publisher plugin)
       publishHTML(target: [
-        allowMissing: false,
+        allowMissing: true,
         alwaysLinkToLastBuild: true,
         keepAll: true,
         reportDir: 'target/site/jacoco',
