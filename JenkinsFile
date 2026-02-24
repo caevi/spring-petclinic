@@ -5,7 +5,7 @@ pipeline {
     // Every 5 minutes on Mondays (day-of-week: 1 = Monday)
     // cron('*/5 * * * 1')
     //temp using this since its tuesday 
-{ cron('*/5 * * * *') 
+   cron('*/5 * * * *') 
   }
 
   options {
